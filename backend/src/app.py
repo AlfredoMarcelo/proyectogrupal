@@ -6,11 +6,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import db
 
 app = Flask(__name__)
-app.url_map.strict_slashes = False
-app.config['DEBUG'] = True
-app.config['ENV'] = 'development'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.url_map.strict_slashes = False # para generar la consulta despues del /
+app.config['DEBUG'] = True #permite depurar
+app.config['ENV'] = 'development' #indicamos que estaremos en desarrollo
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db' # estructura de uri en modo archivo
 app.config['JWT_SECRET_KEY'] = '2008a08af45ab042543b95be99be2633'
 db.init_app(app)
 Migrate(app, db) # db init, db migrate, db upgrade, db downgrade

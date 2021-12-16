@@ -16,6 +16,9 @@ class Comentario(db.Model):
             "fecha": self.fecha
         }
 
+    
+
+
 class Perfil(db.Model):
     __tablename__ = 'perfiles'
     id = db.Column(db.Integer, primary_key = True)
@@ -29,6 +32,7 @@ class Perfil(db.Model):
     editar_evento = db.Column(db.String(120))#
     eliminar_evento = db.Column(db.String(120))#
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))#
+    
     def serialize(self):
         return{
             "id": self.id,
@@ -43,7 +47,7 @@ class Usuario(db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key = True)
     email = db.Column(db.String(100), nullable = False, unique = True)
-    contraseña = db.Column(db.String(250), nullable = False)
+    password = db.Column(db.String(250), nullable = False)
     activo = db.Column(db.Boolean, default = True)#
     rol = db.Column(db.Integer)
 
@@ -51,7 +55,7 @@ class Usuario(db.Model):
         return{
             "id":self.id,
             "email": self.email,
-            "contraseña": self.contraseña,
+            "password": self.password,
             "activo": self.activo,
             "rol": self.rol
         }

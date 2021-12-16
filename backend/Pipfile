@@ -9,6 +9,7 @@ flask-migrate = "*"
 flask-sqlalchemy = "*"
 flask-cors = "*"
 flask-jwt-extended = "*"
+psycopg2 = "*"
 
 [dev-packages]
 

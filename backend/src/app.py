@@ -21,11 +21,10 @@ CORS(app)
 @app.route('/')
 def main():
     return render_template('index.html')
-if __name__ == '__main__':
-    app.run()
+
     
     
-@app.route("/frontend/views/Login", methods=['POST'])
+@app.route("/login", methods=['POST'])
 def login():
         email = request.json.get("email")
         password = request.json.get("password")
@@ -47,7 +46,7 @@ def login():
 
         return jsonify(data),200
 
-@app.route("/frontend/views/Login", methods=['POST'])
+@app.route("/register", methods=['POST'])
 def register():
     if request.method == 'POST':
         name = request.json.get("name")
@@ -88,3 +87,6 @@ def register():
         }
 
         return jsonify(data),200
+
+if __name__ == '__main__':
+    app.run()

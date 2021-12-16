@@ -9,11 +9,6 @@ class Comentario(db.Model):
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     id_evento = db.Column(db.Integer, db.ForeignKey('eventos.id'))
 
-    
-
-    
-
-
 class Perfil(db.Model):
     __tablename__ = 'perfiles'
     id = db.Column(db.Integer, primary_key = True)
@@ -32,9 +27,11 @@ class Usuario(db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key = True)
     email = db.Column(db.String(100), nullable = False, unique = True)
-    contraseña = db.Column(db.String(250), nullable = False)
-    activo = db.Column(db.Boolean, default = True)
-    rol = db.Column(db.Integer)
+    password = db.Column(db.String(250), nullable = False)
+    lastName = db.Column(db.String(250), nullable = False)
+    companyName = db.Column(db.String(250), nullable = True)
+    #activo = db.Column(db.Boolean, default = True)
+    #rol = db.Column(db.Integer)
 
 class Rol(db.Model):
     ___tablename__ = 'roles'

@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db
+from datetime import datetime
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False # para generar la consulta despues del /
@@ -22,3 +23,68 @@ def main():
     return render_template('index.html')
 if __name__ == '__main__':
     app.run()
+    
+    
+@app.route("/frontend/views/Login", methods=['POST'])
+def login():
+        email = request.json.get("email")
+        password = request.json.get("password")
+
+        usuario_exist = Usuario.query.filter_by(email=email).first()
+        if not usuario_exist: return jsonify({"msg": "email/password son incorrectos"}), 400
+
+        if not check_password_hash(usuario_exist.password, password):
+            return jsonify({"msg": "email/password son incorrectos"}), 400
+
+        expires = datetime.timedelta(days=1)
+
+        accesses_token = create_access_token(identity=usuario_exist.id, expires_delta = expires)
+
+        data = {
+            "access_token": accesses_token,
+            "usuario": usuario_exist.serialize()
+        }
+
+        return jsonify(data),200
+
+@app.route("/frontend/views/Login", methods=['POST'])
+def register():
+    if request.method == 'POST':
+        name = request.json.get("name")
+        lastName = request.json.get("lastName" )
+        email = request.json.get("email")
+        password = request.json.get("password")
+        companyName = request.json.get("companyName")
+
+        usuario_exist = Usuario.query.filter_by(email=email).first()
+        if usuario_exist: return jsonify({"error": "el email ya esta registrado!"}), 400
+
+        usuario = Usuario()
+        usuario.email = email
+        usuario.password = generate_password_hash(password)
+        usuario.active = True
+        
+        
+        perfil = Perfil()
+        perfil.name = name
+        perfil.lastName = lastName
+        perfil.email = email
+        perfil.companyName = companyName
+
+
+        usuario.perfil= perfil
+        usuario.save()
+    
+
+        if not usuario: jsonify({"msg": "Registro fallido"}), 400
+
+        expires = datetime.timedelta(days=1)
+
+        accesses_token = create_access_token(identity=usuario.id, expires_delta = expires)
+
+        data = {
+            "access_token": accesses_token,
+            "usuario": usuario.serialize()
+        }
+
+        return jsonify(data),200

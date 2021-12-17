@@ -42,6 +42,7 @@ class Perfil(db.Model):
             "nombre_empresa": self.nombre_empresa,
             "imagen": self.imagen          
         }
+        
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key = True)

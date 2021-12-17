@@ -16,6 +16,7 @@ app.config['JWT_SECRET_KEY'] = '2008a08af45ab042543b95be99be2633'
 db.init_app(app)
 Migrate(app, db) # db init, db migrate, db upgrade, db downgrade
 jwt = JWTManager(app)
+
 CORS(app)
 
 @app.route('/')

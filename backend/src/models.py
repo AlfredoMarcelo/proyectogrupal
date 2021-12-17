@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
-db = SQLAlchemy()
+db=SQLAlchemy()
 
 class Comentario(db.Model):
     __tablename__ = 'comentarios'
@@ -23,25 +23,37 @@ class Comentario(db.Model):
 class Perfil(db.Model):
     __tablename__ = 'perfiles'
     id = db.Column(db.Integer, primary_key = True)
-    nombre = db.Column(db.String(50))
-    apellido = db.Column(db.String(50))
-    nombre_empresa = db.Column(db.String(150))
-    imagen = db.Column(db.String(120))##como subir imagenes a la base de datos?,para después.
-    agregar_evento = db.Column(db.String(120))#datos que no se guardan, eliminar
-    editar_evento = db.Column(db.String(120))#consulta, eliminar
-    eliminar_evento = db.Column(db.String(120))#consulta, eliminar
+    name = db.Column(db.String(50))
+    lastName = db.Column(db.String(50))
+    companyName = db.Column(db.String(150))
+    #imagen = db.Column(db.String(120))##como subir imagenes a la base de datos?,para después.
+    #agregar_evento = db.Column(db.String(120))#datos que no se guardan, eliminar
+    #editar_evento = db.Column(db.String(120))#consulta, eliminar
+    #eliminar_evento = db.Column(db.String(120))#consulta, eliminar
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))#
     
     def serialize(self):
         return{
             "id": self.id,
-            "nombre": self.nombre,
-            "apellido": self.apellido,
+            "name": self.name,
+            "lastName": self.lastName,
             "facebook": self.facebook,
             "instagram": self.instagram,
-            "nombre_empresa": self.nombre_empresa,
+            "companyName": self.companyName,
             "imagen": self.imagen          
         }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def update(self):
+        db.session.commit
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key = True)
@@ -58,9 +70,20 @@ class Usuario(db.Model):
             "password": self.password,
             "activo": self.activo,
             "rol": self.roluser.serialize(),
-            "perfil": self.perfil.serialize()
-            
+            "perfil": self.perfil.serialize() 
         }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def update(self):
+        db.session.commit
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
 
 class Rol(db.Model):
     ___tablename__ = 'roles'
@@ -99,6 +122,17 @@ class Evento(db.Model):
             "valor": self.valor,
             "valoracion": self.valoracion
         }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def update(self):
+        db.session.commit
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 
 class Evento_Favorito(db.Model):
@@ -113,3 +147,14 @@ class Evento_Favorito(db.Model):
             "id": self.id,
             "evento": self.evento
         }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def update(self):
+        db.session.commit
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()

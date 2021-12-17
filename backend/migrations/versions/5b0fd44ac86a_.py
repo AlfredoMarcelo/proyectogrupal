@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: fa4da42faadd
+Revision ID: 5b0fd44ac86a
 Revises: 
-Create Date: 2021-12-16 17:33:23.019719
+Create Date: 2021-12-16 21:58:37.459335
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'fa4da42faadd'
+revision = '5b0fd44ac86a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -43,13 +43,10 @@ def upgrade():
     )
     op.create_table('perfiles',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('nombre', sa.String(length=50), nullable=True),
-    sa.Column('apellido', sa.String(length=50), nullable=True),
-    sa.Column('nombre_empresa', sa.String(length=150), nullable=True),
+    sa.Column('name', sa.String(length=50), nullable=True),
+    sa.Column('lastName', sa.String(length=50), nullable=True),
+    sa.Column('companyName', sa.String(length=150), nullable=True),
     sa.Column('imagen', sa.String(length=120), nullable=True),
-    sa.Column('agregar_evento', sa.String(length=120), nullable=True),
-    sa.Column('editar_evento', sa.String(length=120), nullable=True),
-    sa.Column('eliminar_evento', sa.String(length=120), nullable=True),
     sa.Column('id_usuario', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['id_usuario'], ['usuarios.id'], ),
     sa.PrimaryKeyConstraint('id')

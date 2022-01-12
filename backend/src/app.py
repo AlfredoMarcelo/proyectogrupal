@@ -1,14 +1,12 @@
-from flask import Flask, json, request, jsonify, render_template
+from os import name
+from flask import Flask,render_template, jsonify, request
 from flask_jwt_extended.utils import get_jwt
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import Evento
-from models import db
-from models import Usuario
-from models import Perfil
-from datetime import datetime
+from models import db, User, Profile, Event, Role
+import datetime
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False # para generar la consulta despues del /
@@ -27,157 +25,95 @@ CORS(app)
 def main():
     return render_template('index.html')
 
-@app.route("/usuarios", methods=["GET" , "POST"])
-@app.route("/usuarios/<int:id>", methods=["GET" , "POST", "DELETE"])
-def usuarios(id=None):
-    if request.method == "GET":
-        if id is not None:
-            usuarios= Usuario.query.get(id)
-            if not usuarios: return jsonify({"msg": "Usuario no encontrado"}), 404
-            return jsonify(usuarios), 200
-        else:
-            usuarios = Usuario.query.all()
-            usuarios = list(map(lambda user: user.serialize(), usuarios))
-            return jsonify(usuarios)
-        
-    if request.method == 'POST':
-        name = request.json.get("name", "")
-        lastName = request.json.get("lastName", "")
-        email = request.json.get("email")
-        password = request.json.get("password")
-        companyName = request.json.get("companyName", "")
-
-        usuario_exist = Usuario.query.filter_by(email=email).first()
-        if usuario_exist: return jsonify({"error": "el email ya esta registrado!"}), 400
-
-        usuario = Usuario()
-        usuario.email = email
-        usuario.password = generate_password_hash(password)
-        usuario.active = True
-            
-        perfil = Perfil()
-        perfil.name = name
-        perfil.lastName = lastName
-        perfil.companyName = companyName
-        
-        usuario.perfil = perfil
-        usuario.save()
-    
-
-        return jsonify(usuario.serialize())
-
-
-
-
-
-   
-    
-@app.route("/login", methods=['POST'])
-def login():
-        email = request.json.get("email")
-        password = request.json.get("password")
-
-        usuario_exist = Usuario.query.filter_by(email=email).first()
-        if not usuario_exist: return jsonify({"msg": "email/password son incorrectos"}), 400
-
-        if not check_password_hash(usuario_exist.password, password):
-            return jsonify({"msg": "email/password son incorrectos"}), 400
-
-        expires = datetime.timedelta(days=1)
-
-        accesses_token = create_access_token(identity=usuario_exist.id, expires_delta = expires)
-
-        data = {
-            "access_token": accesses_token,
-            "usuario": usuario_exist.serialize()
-        }
-
-        return jsonify(data),200
-
-@app.route("/registro", methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def register():
+
+    email = request.json.get('email')
+    password = request.json.get('password')
+    name = request.json.get('name')
+    lastname = request.json.get('lastname')
+    companyname = request.json.get('companyname')
+    role_id = request.json.get('role_id')
+
+    user_exist = User.query.filter_by(email=email).first()
+    if user_exist: return jsonify({"Error": "Esta cuenta ya existe"}), 400
+
+    user = User()
+    user.email = email
+    user.password = generate_password_hash(password)
+    user.role_id = role_id
+
+    
+    profile = Profile()
+    profile.name = name
+    profile.lastname = lastname
+    profile.companyname = companyname
+    user.profile = profile
+
+    user.save()
+
+    return jsonify({"msg": "Tu registro se ha realizado con éxito"})
+
+@app.route('/api/login', methods=['POST'])
+def login():
     if request.method == 'POST':
-        name = request.json.get("name", "")
-        lastName = request.json.get("lastName", "")
         email = request.json.get("email")
         password = request.json.get("password")
-        companyName = request.json.get("companyName", "")
 
-        usuario_exist = Usuario.query.filter_by(email=email).first()
-        if usuario_exist: return jsonify({"error": "el email ya esta registrado!"}), 400
+        if not email: return jsonify({"msg": "Ingrese su email para iniciar sesión"}), 422
+        if not password: return jsonify({"msg": "Ingrese su contraseña para iniciar sesión"}), 422
 
-        usuario = Usuario()
-        usuario.email = email
-        usuario.password = generate_password_hash(password)
-        usuario.active = True
-            
-        perfil = Perfil()
-        perfil.name = name
-        perfil.lastName = lastName
-        perfil.companyName = companyName
-        
-        usuario.save()
-    
+        user = User.query.filter_by(email=email).first()
+        if not user: return jsonify({"Error": "El email o contraseña ingresado son incorrectos"})
+        if not check_password_hash(user.password, password): return jsonify({"Error": "El email o contraseña ingresado son incorrectos"}), 401
 
-        if not usuario: jsonify({"msg": "Registro fallido"}), 400
+        expire = datetime.timedelta(days=1)
+        access_token = create_access_token(identity=user.email, expires_delta=expire)
 
-        expires = datetime.timedelta(days=1)
+        date = datetime.datetime.now()
+        timestamp = datetime.datetime.timestamp(date)
+        expire_date= datetime.datetime.fromtimestamp(timestamp + expire.total_seconds())
 
-        accesses_token = create_access_token(identity=usuario.id, expires_delta = expires)
-
-        data = {
-            "access_token": accesses_token,
-            "usuario": usuario.serialize()
+        data= {
+            "access_token": access_token,
+            "expire_date": expire_date,
+            "user": user.serialize()
         }
 
-        return jsonify(data),200
+        return jsonify(data), 200
 
-@app.route('/perfil', methods=["GET"])
-@jwt_required()
-def perfil():
-    id = get_jwt_identity()
-    user = Usuario.query.get(id)
-    return jsonify(user.serialize()), 200
+@app.route('/api/admin', methods=['GET'])
+def admin():
+    users = User.query.all()
+    users = list(map(lambda user: user.serialize(),users))
+    return jsonify(users), 200
 
 
-@app.route("/eventos", methods=["GET" , "POST"])
-@app.route("/eventos/<int:id>", methods=["GET" , "POST", "DELETE"])
-def eventos(id=None):
-    if request.method == "GET":
-        if id is not None:
-            eventos= Evento.query.get(id)
-            if not eventos: return jsonify({"msg": "Evento no encontrado"}), 404
-            return jsonify(eventos.serialize()), 200
-        else:
-            eventos = Evento.query.all()
-            eventos = list(map(lambda evento: evento.serialize(), eventos))
-            return jsonify(eventos)
-        
-        
+
+
+@app.route('/api/create_event', methods=['POST','DELETE'])
+def create():
     if request.method == 'POST':
-        nombre = request.json.get("nombre")
-        imagen = request.json.get("imagen")
-        fecha = request.json.get("fecha")
-        descripcion = request.json.get("descripcion")
-        #estado = request.json.get("estado")
-        ubicacion = request.json.get("ubicacion")
-        valor = request.json.get("valor")
-        valoracion = request.json.get("valoracion")
-        
-        eventos = Evento()
-        eventos.nombre = nombre
-        eventos.imagen = imagen
-        eventos.fecha = fecha
-        eventos.descripcion = descripcion
-        #eventos.estado = estado
-        eventos.ubicacion = ubicacion
-        eventos.valor = valor
-        eventos.valoracion = valoracion
-        
-        eventos.save()
+        name = request.json.get('name')
+        image = request.json.get('image')
+        description = request.json.get('description')
+        date = request.json.get('date')
+        location = request.json.get('location')
+        value = request.json.get('value')
 
-        return jsonify(eventos.serialize()), 200
+        event = Event()
+        event.name = name
+        event.image = image
+        event.description = description
+        event.date = date
+        event.location = location
+        event.value = value
+        event.save()
 
+        return jsonify({"msg": "La creación del evento se ha realizado con éxito"})
+    
+    if request.method == 'DELETE':
+        event = Event()
 
 if __name__ == '__main__':
     app.run()

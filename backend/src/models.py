@@ -1,46 +1,42 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
+
 db=SQLAlchemy()
 
-class Comentario(db.Model):
-    __tablename__ = 'comentarios'
+class Comment(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    comentario = db.Column(db.String(200))
-    fecha = db.Column(db.DateTime)
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))#
-    id_evento = db.Column(db.Integer, db.ForeignKey('eventos.id'))#
+    comment = db.Column(db.String(200))
+    date = db.Column(db.DateTime)
+    id_user = db.Column(db.Integer, db.ForeignKey('user.id'))#
+    user = db.relationship('User', backref="comment", lazy=True)
+    id_event = db.Column(db.Integer, db.ForeignKey('event.id'))#
+
 
     def serialize(self):
         return{
             "id": self.id,
-            "comentario": self.comentario,
-            "fecha": self.fecha
+            "comment": self.comment,
+            "date": self.date,
+            "name_user": self.user.name
         }
 
-    
+    #listo
 
 
-class Perfil(db.Model):
-    __tablename__ = 'perfiles'
+class Profile(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(50))
-    lastName = db.Column(db.String(50))
-    companyName = db.Column(db.String(150))
+    lastname = db.Column(db.String(50))
+    companyname = db.Column(db.String(150))
     #imagen = db.Column(db.String(120))##como subir imagenes a la base de datos?,para después.
-    #agregar_evento = db.Column(db.String(120))#datos que no se guardan, eliminar
-    #editar_evento = db.Column(db.String(120))#consulta, eliminar
-    #eliminar_evento = db.Column(db.String(120))#consulta, eliminar
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))#
+    id_user = db.Column(db.Integer, db.ForeignKey('user.id'))#
     
     def serialize(self):
         return{
             "id": self.id,
             "name": self.name,
-            "lastName": self.lastName,
-            "facebook": self.facebook,
-            "instagram": self.instagram,
-            "companyName": self.companyName,
-            "imagen": self.imagen          
+            "lastname": self.lastname,
+            "companyname": self.companyname         
         }
         
     def save(self):
@@ -54,24 +50,37 @@ class Perfil(db.Model):
         db.session.delete(self)
         db.session.commit()
         
-class Usuario(db.Model):
-    __tablename__ = 'usuarios'
+    #listo
+
+class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     email = db.Column(db.String(100), nullable = False, unique = True)
     password = db.Column(db.String(250), nullable = False)
-    activo = db.Column(db.Boolean, default = True)#caducacion de sesion, token
-    rol = db.Column(db.Integer)
-    perfil = db.relationship("Perfil", backref="usuario", lazy=True)
+    active = db.Column(db.Boolean, default = True)#caducacion de sesion, token
+    role_id= db.Column(db.Integer, db.ForeignKey("role.id"))
+    profile = db.relationship("Profile", backref="user", lazy=True, uselist=False, cascade="all, delete")
+    event = db.relationship("Event", backref="user", lazy=True, cascade="all, delete")
+    favorite_event = db.relationship("Favorite_Event", backref="user", lazy=True, cascade="all, delete")
+
 
     def serialize(self):
+        print(self.event)
         return{
             "id":self.id,
             "email": self.email,
             "password": self.password,
-            "activo": self.activo,
-            "rol": self.roluser.serialize(),
-            "perfil": self.perfil.serialize() 
+            "active": self.active,
+            "role": self.role_id,##COMPLETAR
+            "profile": self.profile.serialize(),
+            "event": self.get_event(),
+            #"favorite_event": self.favorite_event.serialize()
         }
+    
+    def get_event(self):
+        return list(map(lambda event: event.serialize(), self.event))
+    
+    def get_role(self):
+        return list(map(lambda role: role.serialize(), self.role))
         
     def save(self):
         db.session.add(self)
@@ -83,44 +92,54 @@ class Usuario(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-        
 
-class Rol(db.Model):
-    ___tablename__ = 'roles'
-    id = db.Column(db.Integer, db.ForeignKey('usuarios.rol'), primary_key = True)
-    nombre = db.Column(db. String(100))#
-    users = db.relationship("Usuario", backref="roluser", lazy=True)
+#listoo falta cambiar el serialize del rol para traerlo
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True) # usuario o promotor
+    users = db.relationship("User", backref="role", lazy=True)
 
     def serialize(self):
         return{
             "id": self.id,
-            "nombre": self.nombre 
+            "name": self.name 
         }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def update(self):
+        db.session.commit
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
 
+#listo falta verificar mejor el serialize
 
-class Evento(db.Model):
-    __tablename__ = 'eventos'
+class Event(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    nombre = db.Column(db.String(120), nullable = False)
-    imagen = db.Column(db.String(120), nullable = False)#como subir imagen
-    descripcion = db.Column(db.Text, nullable = False)
-    estado = db.Column(db.Boolean, default = True)
-    fecha = db.Column(db.String(120), nullable=False)
-    ubicacion = db.Column(db.String(120), nullable=False)
-    valor = db.Column(db.String(120))
-    valoracion = db.Column(db.String(120))
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))#
+    name = db.Column(db.String(120), nullable = False)
+    image = db.Column(db.String(120), nullable = False)#como subir imagen
+    description = db.Column(db.Text, nullable = False)
+    status = db.Column(db.Boolean, default = True)
+    date = db.Column(db.String(120), nullable=False)
+    location = db.Column(db.String(120), nullable=False)
+    value = db.Column(db.Integer)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('user.id'))#
 
     def serialize(self):
         return{
-            "nombre": self.nombre,
-            "imagen": self.imagen,
-            "descripcion": self.descripcion,
-            "estado": self.estado,
-            "fecha": self.fecha,
-            "ubicacion": self.ubicacion,
-            "valor": self.valor,
-            "valoracion": self.valoracion
+            "name": self.name,
+            "image": self.image,
+            "description": self.description,
+            "status": self.status,
+            "date": self.date,
+            "location": self.location,
+            "value": self.value
         }
         
     def save(self):
@@ -135,17 +154,16 @@ class Evento(db.Model):
         db.session.commit()
 
 
-class Evento_Favorito(db.Model):
-    __tablename__ = 'eventos_favoritos'
+class Favorite_Event(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    evento_favorito = db.Column(db.String(120))##es el evento.nombre
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'))#
-    id_eventos = db.Column(db.Integer, db.ForeignKey('eventos.id'))#
+    favorite_events = db.Column(db.String(120))##es el evento.nombre
+    id_user = db.Column(db.Integer, db.ForeignKey('user.id'))#
+    id_event = db.Column(db.Integer, db.ForeignKey('event.id'))#
 
     def serialize(self):
         return{
             "id": self.id,
-            "evento": self.evento
+            "favorite_events": {self.event.name} #REVISAR SI ESTA CORRECTO TRAER EL NOMBRE DEL EVENTO
         }
         
     def save(self):
@@ -158,3 +176,5 @@ class Evento_Favorito(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+#CASI LISTO REVISAR SERIALIZACION
